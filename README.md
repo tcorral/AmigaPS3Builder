@@ -22,6 +22,42 @@ We do not support piracy.
 
 You must supply your own ADF, HDF, or LHA files, music, and any other assets, and those files must be ones you legally own or otherwise have the right to use. That includes game images, box art, icons, background music, and Kickstart ROMs. This project only packages files you already have. It does not download them, and nothing here is a licence to copy or share commercial Amiga software.
 
+Git ignores those files on purpose. [What git does not track](#what-git-does-not-track) lists each pattern and where the replacement comes from.
+
+## What git does not track
+
+A clone is the Swift sources, the scripts, and the app icon. Local media, build products, and third-party runtimes are listed in `.gitignore` and are absent after `git clone`. You create or supply them on the machine where you build.
+
+**Game disks, archives, and ROMs.** `*.adf`, `*.hdf`, `*.lha`, and `*.rom` are ignored in every directory. `assets-example/` is ignored as well, so the tree has no sample title, box art, or music. Choose an ADF, HDF, or LHA you legally own in the app. An LHA has to contain an ADF or HDF, and `lha`, `unar`, `7z`, or `bsdtar` has to be on `PATH` to unpack it. The Kickstart file (`USRDIR/kick31.rom`, or `kick13.rom` / `kick12.rom`) has to already sit in the CLIKAK500 template. The app copies that ROM into the package. It never downloads one.
+
+The tutorial folder is not in this repository either. `./scripts/build-app.sh` looks for `Create Amiga PKG Tutorial/CLIKAK500/USRDIR/EBOOT.BIN` in the repo root, then in `~/Downloads/Create Amiga PKG Tutorial`, `~/projects/amiga-to-ps3/Create Amiga PKG Tutorial`, and a previously installed app bundle. That folder is also where `makepkg.rar` and TrueAncestor live. Without `EBOOT.BIN`, the app-bundle build stops.
+
+**Packages you produce.** `*.pkg` files and directories whose names end in `_staging` are output from **Prepare files** and **Build .PKG**. They stay next to your working copy.
+
+**Build folders.** `.build/` is created by `swift run` and `swift build`. `dist/` is created by `./scripts/build-app.sh` and holds `AmigaPS3Builder.app`. Delete either directory and run the same command again.
+
+**`vendor/`.** The scripts park third-party tools here. The directory is ignored because it is large, and some of it is not ours to publish. `./scripts/build-app.sh` fills in what it can:
+
+- `vendor/atracdenc` is built from [atracdenc-rs](https://github.com/liangchunn/atracdenc-rs) `v0.1.0` when `cargo` and rustc 1.88 or newer are installed. The script clones the sources into `vendor/atracdenc-src` and compiles. Point `ATRACDENC_DIR` at a tree you already built. Skip the tool with `AMIGA_SKIP_ATRACDENC=1 AMIGA_REQUIRE_ATRACDENC=0`.
+- `vendor/at3emu` is the [at3emu](https://github.com/liangchunn/at3emu) `v0.1.0` release, downloaded when `./scripts/build-app.sh` runs (`AMIGA_ALLOW_AT3EMU_FETCH=1`). Archives land in `vendor/at3emu-cache/` and are checked against `scripts/at3emu.manifest`. Sony’s `at3tool` and `libatrac.so` are not fetched. Background music is encoded with `atracdenc`. `at3emu` is only the optional wrapper, and it does not encode on its own.
+- `vendor/wine-runtime` is an x86_64 WineHQ build. If `/Applications/Wine Stable.app` is installed, the script copies it. Otherwise the download stays off until you opt in. The tarball is cached in `vendor/wine-cache/` and checked against `scripts/wine-runtime.manifest`.
+
+```sh
+# Copy from an installed Wine Stable.app
+WINE_RUNTIME_DIR="/Applications/Wine Stable.app" ./scripts/stage-wine-runtime.sh
+
+# Or download the pinned build
+AMIGA_ALLOW_WINE_FETCH=1 ./scripts/stage-wine-runtime.sh
+```
+
+On Apple Silicon that Wine binary runs under Rosetta 2. To build the UI without bundling Wine:
+
+```sh
+AMIGA_SKIP_WINE=1 AMIGA_REQUIRE_WINE=0 ./scripts/build-app.sh
+```
+
+`.DS_Store` is ignored too. Nothing to restore.
+
 ## Testing in RPCS3 (macOS)
 
 The `.pkg` from this pipeline targets **real PS3 hardware** (or a fully working
@@ -47,6 +83,8 @@ For a definitive test, install the Content-ID-named `.pkg` on a PS3 with a
 compatible CFW.
 
 ## Run on macOS
+
+`.build/`, `dist/`, and `vendor/` are empty after a clone. [What git does not track](#what-git-does-not-track) covers how they get filled, and which disks and ROMs you still provide yourself.
 
 Xcode command-line tools and Swift 5.9 or newer are required:
 
@@ -75,16 +113,9 @@ Release builds bundle these inside `AmigaPS3Builder.app`:
 - `Contents/Resources/Tools/atracdenc` — ATRAC3 encoder for `SND0.AT3`
 - `Contents/Resources/Wine` — WineHQ macOS **x86_64** runtime (optional but required for **Build .PKG**)
 
-`./scripts/build-app.sh` stages `atracdenc` from source when it is missing (Rust 1.88+). Stage Wine before building:
+`./scripts/build-app.sh` stages `atracdenc` and `at3emu` when they are missing. Wine is copied from Wine Stable.app, or downloaded only after you opt in. The commands are in [What git does not track](#what-git-does-not-track). After a successful build:
 
 ```sh
-# Copy from an installed Wine Stable.app
-WINE_RUNTIME_DIR="/Applications/Wine Stable.app" ./scripts/stage-wine-runtime.sh
-
-# Or download the pinned build from scripts/wine-runtime.manifest
-AMIGA_ALLOW_WINE_FETCH=1 ./scripts/stage-wine-runtime.sh
-
-./scripts/build-app.sh
 ./scripts/verify-bundle.sh
 ```
 
@@ -92,14 +123,7 @@ On Apple Silicon, the bundled Wine runs through **Rosetta 2** with an isolated
 `WINEPREFIX` under `~/Library/Application Support/AmigaPS3Builder/wine-prefix`.
 Third-party notices live in `scripts/third-party-notices.txt` and inside the app bundle.
 
-To build the macOS UI without bundling Wine (staging only):
-
-```sh
-AMIGA_SKIP_WINE=1 AMIGA_REQUIRE_WINE=0 ./scripts/build-app.sh
-```
-
-The UI will default to the bundled tutorial template when launched from the
-`.app`, or to the repository copy when launched with `swift run`. A template folder must contain:
+Launched from the `.app`, the UI uses the tutorial copied into the bundle. `swift run` searches the same places as the build script: a `Create Amiga PKG Tutorial` folder beside the working directory, under `~/Downloads`, or at `~/projects/amiga-to-ps3/`. A template folder must contain:
 
 ```text
 USRDIR/EBOOT.BIN
