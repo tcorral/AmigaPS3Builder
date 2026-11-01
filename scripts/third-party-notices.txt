@@ -1,0 +1,30 @@
+Amiga PS3 Builder — third-party runtime notices
+==============================================
+
+Wine (WineHQ stable, macOS x86_64 build)
+  Used to run the supplied Windows PS3 packager and optional TrueAncestor tools.
+  License: GNU LGPL 2.1+ (see https://www.winehq.org/about/)
+  Source/build: https://github.com/Gcenx/macOS_Wine_builds
+  Bundled only when you run scripts/stage-wine-runtime.sh or provide WINE_RUNTIME_DIR.
+
+Supplied Windows packager (makepkg.rar)
+  make_pkg.exe, psn_package_npdrm.exe, Cygwin/Mingw DLLs, and PS3 packaging kit data.
+  Origin: Create Amiga PKG Tutorial bundle. Use only with content you are entitled to package.
+
+TrueAncestor / scetool toolchain
+  Optional resign step; not redistributed beyond files already in the tutorial folder.
+
+GStreamer (optional Wine dependency)
+  Some Wine builds expect GStreamer for multimedia. Install separately if Wine reports missing codecs.
+
+atracdenc-rs (liangchunn/atracdenc-rs)
+  Encodes SND0.AT3 background music for PS3 packages (ATRAC3 in RIFF .AT3).
+  License: LGPL-2.1-or-later — https://github.com/liangchunn/atracdenc-rs
+  Bundled when you run scripts/stage-atracdenc.sh (see scripts/atracdenc.manifest).
+  Source is fetched at build time; the LGPL license is copied next to the binary.
+
+at3emu (liangchunn/at3emu)
+  Optional Unicorn wrapper around Sony's at3tool. It does not encode on its own.
+  License: MIT — https://github.com/liangchunn/at3emu
+  Bundled when you run scripts/stage-at3emu.sh (see scripts/at3emu.manifest).
+  Sony at3tool / libatrac.so are SCE Confidential and are not redistributed.

@@ -1,0 +1,8 @@
+{
+  "name": "WineHQ-stable-macos-x86_64",
+  "version": "11.0_1",
+  "url": "https://github.com/Gcenx/macOS_Wine_builds/releases/download/11.0_1/wine-stable-11.0_1-osx64.tar.xz",
+  "sha256": "b50dc50ec7f41d58b115a6b685d4d1315ba3c797bd3aa0f49213f2703cb82388",
+  "layout": "wine_stable_app",
+  "notes": "Intel x86_64 Wine build. On Apple Silicon the app launches it through Rosetta. Verify checksum before bundling."
+}

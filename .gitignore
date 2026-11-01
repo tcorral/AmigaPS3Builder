@@ -1,0 +1,13 @@
+.build/
+dist/
+vendor/
+.DS_Store
+*.pkg
+*_staging/
+
+# Local game disks and example media. Supply your own.
+assets-example/
+*.adf
+*.hdf
+*.lha
+*.rom
